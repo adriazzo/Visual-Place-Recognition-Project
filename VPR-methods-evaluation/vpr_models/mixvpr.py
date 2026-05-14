@@ -90,9 +90,26 @@ class MixVPR(nn.Module):
         x = F.normalize(x.flatten(1), p=2, dim=-1)
         return x
 
-### Implement ResNet-50 here for MixVPR model,
-### otherwise `self.backbone = ResNet()` will fail
-### (academic purpose)
+def __init__(self):
+        super().__init__()
+        # Carica la ResNet50 originale
+        self.model = torchvision.models.resnet50()
+        
+        # Eliminiamo le parti finali che il prof non ha salvato nel file dei pesi
+        del self.model.layer4
+        del self.model.avgpool
+        del self.model.fc
+
+    def forward(self, x):
+        # Facciamo passare l'immagine attraverso i layer uno alla volta
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+        return x
 
 
 class MixVPRModel(torch.nn.Module):
