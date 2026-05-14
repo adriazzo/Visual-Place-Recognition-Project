@@ -90,7 +90,9 @@ class MixVPR(nn.Module):
         x = F.normalize(x.flatten(1), p=2, dim=-1)
         return x
 
-def __init__(self):
+
+class ResNet(nn.Module):
+    def __init__(self):
         super().__init__()
         # Carica la ResNet50 originale
         self.model = torchvision.models.resnet50()
