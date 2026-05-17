@@ -90,6 +90,7 @@ class MixVPR(nn.Module):
         x = F.normalize(x.flatten(1), p=2, dim=-1)
         return x
 
+
 class ResNet(nn.Module):
     def __init__(self):
         super().__init__()
