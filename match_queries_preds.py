@@ -7,7 +7,7 @@ from tqdm import tqdm
 from pathlib import Path
 from copy import deepcopy
 
-from util import read_file_preds, read_file_preds_brutto
+from util import read_file_preds
 
 sys.path.append(str(Path(__file__).parent.joinpath("image-matching-models")))
 
@@ -63,7 +63,7 @@ def main(args):
             continue
 
         results = []
-        q_path, pred_paths = read_file_preds_brutto(txt_file, base_dir=".")
+        q_path, pred_paths = read_file_preds(txt_file)
         img0 = matcher.load_image(q_path, resize=img_size)
         first = True
         for pred_path in pred_paths[:num_preds]:
