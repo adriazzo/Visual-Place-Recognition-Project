@@ -28,7 +28,9 @@ def parse_arguments():
     parser.add_argument("--start-query", type=int, default=-1, help="query to start from")
     parser.add_argument("--num-queries", type=int, default=-1, help="number of queries")
     parser.add_argument("--soglia", type=int, default=-1, help="soglia")
+    parser.add_argument("--first-only", type=int, default=-1, help="soglia")
     parser.add_argument("--adaptive", type=bool, default=False, help="re-ranking adattivo o no (lasciare vuoto per no)")
+    parser.add_argument("--first-only", type=bool, default=False, help="re-ranking adattivo se controllare solo la prima o farlo progressivo (lasciare vuoto per progressivo)")
     return parser.parse_args()
 
 def main(args):
@@ -53,8 +55,6 @@ def main(args):
     num_queries = num_queries if num_queries >= 0 else len(txt_files)
 
     controlli_effettivi = 0
-    print(adaptive)
-    exit()
 
     for txt_file in tqdm(txt_files[start_query : start_query + num_queries]):
         q_num = Path(txt_file).stem
@@ -70,7 +70,7 @@ def main(args):
             img1 = matcher.load_image(pred_path, resize=img_size)
             result = matcher(deepcopy(img0), img1)
             controlli_effettivi += 1
-            if placeholder_check(result["num_inliers"],soglia=soglia) and adaptive:
+            if placeholder_check(result["num_inliers"],soglia=soglia) and adaptive and first:
                 break
             first = False
             result["all_desc0"] = result["all_desc1"] = None
