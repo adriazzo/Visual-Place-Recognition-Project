@@ -28,7 +28,6 @@ def parse_arguments():
     parser.add_argument("--start-query", type=int, default=-1, help="query to start from")
     parser.add_argument("--num-queries", type=int, default=-1, help="number of queries")
     parser.add_argument("--soglia", type=int, default=-1, help="soglia")
-    parser.add_argument("--first-only", type=int, default=-1, help="soglia")
     parser.add_argument("--adaptive", type=bool, default=False, help="re-ranking adattivo o no (lasciare vuoto per no)")
     parser.add_argument("--first-only", type=bool, default=False, help="re-ranking adattivo se controllare solo la prima o farlo progressivo (lasciare vuoto per progressivo)")
     return parser.parse_args()
