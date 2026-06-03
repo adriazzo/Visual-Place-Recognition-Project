@@ -16,7 +16,7 @@ def compute_distance(point_A, point_B):
     return ((point_A - point_B) ** 2).sum() ** 0.5
 
 def get_list_distances_from_preds(preds_txt_file):
-    query_path, preds_paths = read_file_preds(preds_txt_file)
+    query_path, preds_paths, _ = read_file_preds(preds_txt_file)
     query_utm = get_utm_from_path(query_path)
     list_preds_utm = [get_utm_from_path(pred_path) for pred_path in preds_paths]
     distances = [compute_distance(query_utm, pred_utm) for pred_utm in list_preds_utm]
