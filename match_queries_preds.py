@@ -62,7 +62,7 @@ def main(args):
             continue
 
         results = []
-        q_path, pred_paths = read_file_preds(txt_file)
+        q_path, pred_paths, _ = read_file_preds(txt_file)
         img0 = matcher.load_image(q_path, resize=img_size)
         first = True
         for pred_path in pred_paths[:num_preds]:
