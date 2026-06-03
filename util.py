@@ -5,9 +5,9 @@ def read_file_preds(preds_txt_file):
         lines = file.read().splitlines()
     query_path = lines[1]
     preds_paths = lines[4:lines.index('', 4)]
-    assert preds_paths[0][:5] == preds_paths[-1][:5]
-
-    return query_path, preds_paths
+    positives_paths = lines[26:]
+    
+    return query_path, preds_paths, positives_paths
 
 def get_utm_from_path(path):
     return np.array([path.split("@")[1], path.split("@")[2]]).astype(np.float32)
