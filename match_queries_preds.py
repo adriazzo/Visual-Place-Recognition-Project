@@ -14,8 +14,11 @@ sys.path.append(str(Path(__file__).parent.joinpath("image-matching-models")))
 from matching import get_matcher, available_models
 from matching.utils import get_default_device
 
-def placeholder_check(num_inliers,soglia):
-    return num_inliers>soglia
+def logistic_regressor_predict(num_inliers, model_path):
+    num_inliers = np.asarray(num_inliers).reshape(-1,1)
+    
+    clf = joblib.load(model_path)
+    return clf.predict(num_inliers)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -30,6 +33,8 @@ def parse_arguments():
     parser.add_argument("--soglia", type=int, default=-1, help="soglia")
     parser.add_argument("--adaptive", type=bool, default=False, help="re-ranking adattivo o no (lasciare vuoto per no)")
     parser.add_argument("--first-only", type=bool, default=False, help="re-ranking adattivo se controllare solo la prima o farlo progressivo (lasciare vuoto per progressivo)")
+    parser.add_argument("--model_path", required = True, help="Percorso del modello trainato")
+
     return parser.parse_args()
 
 def main(args):
@@ -43,6 +48,7 @@ def main(args):
     num_queries = args.num_queries
     soglia = args.soglia
     adaptive = args.adaptive
+    model_path = Path(args.model_path)
 
     output_folder = Path(preds_folder + f"_{matcher_name}") if args.out_dir is None else Path(args.out_dir)
     output_folder.mkdir(exist_ok=True)
@@ -69,7 +75,7 @@ def main(args):
             img1 = matcher.load_image(pred_path, resize=img_size)
             result = matcher(deepcopy(img0), img1)
             controlli_effettivi += 1
-            if placeholder_check(result["num_inliers"],soglia=soglia) and adaptive and first:
+            if logistic_regressor_predict(result['num_inliers'], model_path) and adaptive and first:
                 break
             first = False
             result["all_desc0"] = result["all_desc1"] = None
