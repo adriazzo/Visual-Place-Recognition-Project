@@ -10,11 +10,6 @@ from tqdm import tqdm
 import joblib
 from util import read_file_preds
 
-
-# ---------------------------------------------------------------------------
-# Costruisce X (N, 20) e y (N,) per una coppia preds_dir / inliers_dir.
-# Usa tutte e 20 le predizioni dell'image retrieval come feature.
-# ---------------------------------------------------------------------------
 def build_dataset(preds_dir: str, inliers_dir: str):
     txt_files = glob(os.path.join(preds_dir, "*.txt"))
     txt_files.sort(key=lambda x: int(Path(x).stem))
@@ -31,8 +26,8 @@ def build_dataset(preds_dir: str, inliers_dir: str):
         _, pred_paths, pos_paths = read_file_preds(txt_file)
         results = torch.load(torch_file, weights_only=False)
 
-        # --- feature: una riga per predizione (scalare num_inliers) ----------
-        # --- label: 1 se quella predizione è nel ground-truth positivo ------
+        # feature: una riga per predizione (scalare intero num_inliers) 
+        # label: 1 se quella predizione è vera
         for i, r in enumerate(results):
             X.append(r["num_inliers"])
             label = int(pred_paths[i] in pos_paths)
@@ -41,9 +36,6 @@ def build_dataset(preds_dir: str, inliers_dir: str):
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.int32)
 
 
-# ---------------------------------------------------------------------------
-# Tuning con GridSearchCV e PredefinedSplit (train già separato da val)
-# ---------------------------------------------------------------------------
 def tune(X_train, y_train, X_val, y_val, model_path: Path):
     X_train = np.asarray(X_train).reshape(-1, 1)
     X_val   = np.asarray(X_val).reshape(-1, 1)
@@ -51,7 +43,7 @@ def tune(X_train, y_train, X_val, y_val, model_path: Path):
     X_all = np.vstack((X_train, X_val))
     y_all = np.concatenate((y_train, y_val))
 
-    # -1 = train, 0 = val  (convenzione di PredefinedSplit)
+    # -1 = train, 0 = val 
     fold = np.concatenate([
         np.full(len(X_train), -1),
         np.zeros(len(X_val))
@@ -79,20 +71,6 @@ def tune(X_train, y_train, X_val, y_val, model_path: Path):
     joblib.dump(grid.best_estimator_, model_path)
     return grid.best_estimator_, grid.best_params_
 
-
-# ---------------------------------------------------------------------------
-# Main: accumula UN dataset unico (tutti VPR × tutti matcher) poi chiama
-# tune una sola volta.
-#
-# Struttura attesa:
-#   train_base_dir/
-#   └── <vpr_method>/
-#       └── <timestamp>/          ← find_run_dir lo trova automaticamente
-#           ├── preds/
-#           └── preds_<matcher>/
-#
-#   val_base_dir/  (stesso layout, dataset diverso)
-# ---------------------------------------------------------------------------
 def main(args):
     train_base = Path(args.train_base_dir)
     val_base   = Path(args.val_base_dir)
@@ -116,7 +94,7 @@ def main(args):
             matcher = matcher_dir.name.replace("preds_", "")
             combo   = f"{vpr_method}__{matcher}"
 
-            # --- controlla che il val set esista --------------------------
+            # controlla che il val set esista 
             val_vpr_dir = val_base / vpr_method
 
             preds_val   = val_vpr_dir / "preds"
@@ -125,7 +103,7 @@ def main(args):
                 print(f"\n=== {combo} === SKIP (val set mancante)")
                 continue
 
-            # --- costruisce i dataset per questa combo --------------------
+            # costruisce i dataset per questa combo 
             print(f"\n=== {combo} ===")
             X_tr, y_tr = build_dataset(str(vpr_dir / "preds"), str(matcher_dir))
             X_vl, y_vl = build_dataset(str(preds_val),           str(matched_val))
@@ -142,7 +120,7 @@ def main(args):
     if not X_train_all:
         raise RuntimeError("Nessun dataset trovato. Controlla i percorsi.")
 
-    # --- dataset unico: concatena lungo l'asse delle query ----------------
+    # dataset unico: concatena lungo l'asse delle query 
     X_train = np.concatenate(X_train_all, axis=0)
     y_train = np.concatenate(y_train_all, axis=0)
     X_val   = np.concatenate(X_val_all,   axis=0)
@@ -150,15 +128,12 @@ def main(args):
 
     print(f"\n{'='*50}")
     print(f"Dataset globale — Train: {len(X_train)} | Val: {len(X_val)}")
-    #print(f"Feature per campione: {X_train.shape[1]}")
     print(f"{'='*50}\n")
 
     model_path = model_dir / f"{train_base.name}.pkl"
     tune(X_train, y_train, X_val, y_val, model_path)
     print(f"\nModello salvato in: {model_path}")
-
-
-# ---------------------------------------------------------------------------
+ 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_base_dir", required=True)
