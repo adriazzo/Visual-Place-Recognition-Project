@@ -94,16 +94,13 @@ class MixVPR(nn.Module):
 class ResNet(nn.Module):
     def __init__(self):
         super().__init__()
-        # Carica la ResNet50 originale
         self.model = torchvision.models.resnet50()
         
-        # Eliminiamo le parti finali che il prof non ha salvato nel file dei pesi
         del self.model.layer4
         del self.model.avgpool
         del self.model.fc
 
     def forward(self, x):
-        # Facciamo passare l'immagine attraverso i layer uno alla volta
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x)
