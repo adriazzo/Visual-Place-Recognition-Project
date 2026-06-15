@@ -21,6 +21,9 @@ def logistic_regressor_predict(num_inliers, model_path):
     clf = joblib.load(model_path)
     return clf.predict(num_inliers)
 
+def threshold_predict(num_inliers, threshold):
+    return num_inliers > threshold
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--preds-dir", type=str, help="directory with predictions of a VPR model")
@@ -31,11 +34,11 @@ def parse_arguments():
     parser.add_argument("--num-preds", type=int, default=100, help="number of predictions to match")
     parser.add_argument("--start-query", type=int, default=-1, help="query to start from")
     parser.add_argument("--num-queries", type=int, default=-1, help="number of queries")
-    parser.add_argument("--soglia", type=int, default=-1, help="soglia")
     parser.add_argument("--adaptive", type=bool, default=False, help="re-ranking adattivo o no (lasciare vuoto per no)")
-    parser.add_argument("--first-only", type=bool, default=False, help="re-ranking adattivo se controllare solo la prima o farlo progressivo (lasciare vuoto per progressivo)")
-    parser.add_argument("--model_path", required = True, help="Percorso del modello trainato")
-
+    parser.add_argument("--threshold", type=int, default=-1, help="soglia")
+    parser.add_argument("--model_type", type=str, default="regressor",  choices=["threshold", "regressor"])
+    parser.add_argument("--model_path", help="Percorso del modello trainato")
+    
     return parser.parse_args()
 
 def main(args):
@@ -47,9 +50,14 @@ def main(args):
     preds_folder = args.preds_dir
     start_query = args.start_query
     num_queries = args.num_queries
-    soglia = args.soglia
+    threshold = args.threshold
     adaptive = args.adaptive
+    model_type = args.model_type
     model_path = Path(args.model_path)
+    if model_type == "regressor" and not model_path:
+        raise Exception("if you want to use a regressor you must provide the model path")
+    elif model_type == "threshold" and not threshold:
+        raise Exception("if you want to use a hard threshold you must provide the threshold")
 
     output_folder = Path(preds_folder + f"_{matcher_name}") if args.out_dir is None else Path(args.out_dir)
     output_folder.mkdir(exist_ok=True)
@@ -71,14 +79,17 @@ def main(args):
         results = []
         q_path, pred_paths, _ = read_file_preds(txt_file)
         img0 = matcher.load_image(q_path, resize=img_size)
-        first = True
         for pred_path in pred_paths[:num_preds]:
             img1 = matcher.load_image(pred_path, resize=img_size)
             result = matcher(deepcopy(img0), img1)
             controlli_effettivi += 1
-            if logistic_regressor_predict(result['num_inliers'], model_path) and adaptive and first:
-                break
-            first = False
+            if adaptive:
+                if model_type == "regressor":
+                    if logistic_regressor_predict(result['num_inliers'], model_path):
+                        break
+                if model_type == "threshold":
+                    if threshold_predict(result['num_inliers'], threshold):
+                        break
             result["all_desc0"] = result["all_desc1"] = None
             results.append(result)
         torch.save(results, out_file)
