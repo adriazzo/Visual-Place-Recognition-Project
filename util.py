@@ -5,7 +5,7 @@ def read_file_preds(preds_txt_file):
         lines = file.read().splitlines()
     query_path = lines[1]
     preds_paths = lines[4:lines.index('', 4)]
-    positives_paths = lines[26:]
+    positives_paths = lines[26:] # extracts also the paths of the retrieved images that are correct
     
     return query_path, preds_paths, positives_paths
 
